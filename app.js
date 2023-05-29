@@ -42,6 +42,8 @@ class Vector {
 class Circle {
     constructor(_posX, _posY, _r) {
         this.pos = new Vector(_posX, _posY)
+        this.a = new Vector(1, 1)
+        this.v = new Vector(0, 0)
         this.r = _r
     }
     show() {
@@ -104,6 +106,17 @@ class Boid {
         ctx.fill()
         //visualisation
         return this.seek(newTarget)
+    }
+    evade(target) {
+        const newTarget = structuredClone(target)
+        newTarget.pos = target.pos.add(target.v.multiply(30))
+        //visualisation
+        ctx.beginPath()
+        ctx.arc(newTarget.pos.x, newTarget.pos.y, 2, 0, 2 * Math.PI)
+        ctx.fillStyle = "blue"
+        ctx.fill()
+        //visualisation
+        return this.flee(newTarget)
     }
     move() {
         this.v = this.v.add(this.a)
