@@ -90,10 +90,20 @@ class Boid {
         return force.mag() > this.maxForce ? force.unit().multiply(this.maxForce) : force
     }
     flee(target) {
-        const direction = target.pos.subtract(this.pos).unit()
-        const mag = direction.multiply(-this.maxSpeed)
-        const force = mag.subtract(this.v)
+        const desired = target.pos.subtract(this.pos).unit()
+        const force = desired.multiply(-this.maxSpeed).subtract(this.v)
         return force.mag() > this.maxForce ? force.unit().multiply(this.maxForce) : force //flies off when multiplied by -1
+    }
+    pursuit(target) {
+        const newTarget = structuredClone(target)
+        newTarget.pos = target.pos.add(target.v.multiply(30))
+        //visualisation
+        ctx.beginPath()
+        ctx.arc(newTarget.pos.x, newTarget.pos.y, 2, 0, 2 * Math.PI)
+        ctx.fillStyle = "blue"
+        ctx.fill()
+        //visualisation
+        return this.seek(newTarget)
     }
     move() {
         this.v = this.v.add(this.a)
@@ -103,6 +113,7 @@ class Boid {
         this.a = new Vector(0, 0)
     }
     applyForce(force) {
+        console.log(force)
         this.a = this.a.add(force).multiply(1 / this.m)
         // this.a = this.a.add(force).mag() < this.maxSpeed ? this.a.add(force) : this.a
         // once the magnitude of the force exceeds the max magnitude it will no longer change and
@@ -124,14 +135,13 @@ function animate() {
     clearCanvas()
     circle.pos.x += 0.5
     circle.pos.y += 0.5
-    console.log(circle.pos.subtract(boid.pos))
     if (circle.pos.subtract(boid.pos).mag() < circle.r) {
         circle.pos.x = Math.random() * canvas.width
         circle.pos.y = Math.random() * canvas.height
     }
     circle.show()
     const seek = boid.seek(circle)
-    const seek2 = boid2.seek(boid)
+    const seek2 = boid2.pursuit(boid)
     boid.applyForce(seek)
     boid.move()
     boid2.applyForce(seek2)
