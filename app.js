@@ -34,15 +34,9 @@ class Vector {
     angle() {
         return Math.atan2(this.y, this.x)
     }
-
-
     static dot(vec1, vec2) {
         return vec1.x * vec2.x + vec1.y * vec2.y
     }
-    static setMag(v, mag) {
-        return v.unit().multiply(mag)
-    }
-
 }
 
 class Circle {
@@ -53,7 +47,7 @@ class Circle {
     show() {
         ctx.beginPath()
         ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI)
-        ctx.fillStyle = "darkslategray"
+        ctx.fillStyle = "yellow"
         ctx.fill() 
     }
 }
@@ -67,13 +61,18 @@ class Boid {
         this.r = 10
         this.friction = 0.0
         this.maxSpeed = 3
-        this.maxForce = 0.06
+        this.maxForce = 0.03
     }
     show() {
+        const angle = this.v.angle()
+        const x1 = 60 * Math.cos(-Math.PI / 12 + angle)
+        const y1 = 60 * Math.sin(-Math.PI / 12 + angle)
+        const x2 = 60 * Math.cos(Math.PI / 12 + angle)
+        const y2 = 60 * Math.sin(Math.PI / 12 + angle)
         ctx.beginPath()
         ctx.moveTo(this.pos.x, this.pos.y)
-        ctx.lineTo(this.pos.x - 35, this.pos.y + 10)
-        ctx.lineTo(this.pos.x - 35, this.pos.y - 10)
+        ctx.lineTo(this.pos.x - x1, this.pos.y - y1)
+        ctx.lineTo(this.pos.x - x2, this.pos.y - y2)
         ctx.lineTo(this.pos.x, this.pos.y)
         ctx.strokeStyle = "white"
         ctx.stroke()
@@ -86,9 +85,8 @@ class Boid {
         ctx.stroke()
     }
     seek(target) {
-        const direction = target.pos.subtract(this.pos).unit()
-        const mag = direction.multiply(this.maxSpeed)
-        const force = mag.subtract(this.v)
+        const desired = target.pos.subtract(this.pos).unit()
+        const force = desired.multiply(this.maxSpeed).subtract(this.v)
         return force.mag() > this.maxForce ? force.unit().multiply(this.maxForce) : force
     }
     flee(target) {
@@ -105,8 +103,7 @@ class Boid {
         this.a = new Vector(0, 0)
     }
     applyForce(force) {
-        this.a = this.a.add(force)
-        console.log(this.a)
+        this.a = this.a.add(force).multiply(1 / this.m)
         // this.a = this.a.add(force).mag() < this.maxSpeed ? this.a.add(force) : this.a
         // once the magnitude of the force exceeds the max magnitude it will no longer change and
         // above function will return 'this.a' upon every iteration.
@@ -114,20 +111,33 @@ class Boid {
 }
 
 const boid = new Boid(600, 600, 1)
+const boid2 = new Boid(300, 200, 1)
 const circle = new Circle(200, 200, 15)
 
 
-window.addEventListener('mousemove', (e) => {
-    circle.pos.x = e.clientX
-    circle.pos.y = e.clientY
-})
+// window.addEventListener('mousemove', (e) => {
+//     circle.pos.x = e.clientX
+//     circle.pos.y = e.clientY
+// })
 
 function animate() {
     clearCanvas()
+    circle.pos.x += 0.5
+    circle.pos.y += 0.5
+    console.log(circle.pos.subtract(boid.pos))
+    if (circle.pos.subtract(boid.pos).mag() < circle.r) {
+        circle.pos.x = Math.random() * canvas.width
+        circle.pos.y = Math.random() * canvas.height
+    }
     circle.show()
     const seek = boid.seek(circle)
+    const seek2 = boid2.seek(boid)
     boid.applyForce(seek)
     boid.move()
+    boid2.applyForce(seek2)
+    boid2.move()
+    boid2.show()
+    // boid.showVector()
     boid.show()
     requestAnimationFrame(animate)
 }
